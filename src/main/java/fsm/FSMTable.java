@@ -84,8 +84,25 @@ public class FSMTable {
      */
     public void fire(EVENT event) {
         try {
+
             // 在state下,发生event时, 在不需要条件或条件为真时, 执行action并跳到newState, 等待下一个事件
-            List<Transaction> ts = transactions.get(state).get(event);
+            Map<EVENT, List<Transaction>> curState = transactions.get(state);
+            if(curState == null) {
+                // error log
+                System.out.println("STATE "+state+" is not defined");
+                return;
+            }
+            List<Transaction> curEvent = curState.get(event);
+            if (curEvent == null) {
+                System.out.println("EVENT "+event+" is not defined in STATE "+state);
+                return;
+            }
+
+            List<Transaction> ts = this.transactions.get(state).get(event);
+            if(ts == null) {
+                System.out.println("STATE "+state+" EVENT "+event+" has no transaction");
+                return;
+            }
             for(Transaction t: ts) {
                 if(t.condition == null || t.condition.test()) {
                     if(t.action!=null) {

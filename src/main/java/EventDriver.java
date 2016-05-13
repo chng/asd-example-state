@@ -8,21 +8,19 @@ import java.util.Map;
 /**
  * Created by chn on 16/5/11.
  */
-public class EventCenter {
+public class EventDriver {
 
     FSMTable fsmTable = new FSMTable(STATE.INIT);
 
     Map<STATE, Subject> observers = Maps.newHashMap();
 
-    Observer autoRun = new Observer() {
-        public void update() {
-            fsmTable.fire(EVENT.AUTO);
-            observers.get(fsmTable.getState()).notifyObservers();
-        }
+    Observer autoRun = () -> {
+        fsmTable.fire(EVENT.AUTO);
+        observers.get(fsmTable.getState()).notifyObservers();
     };
-    private Condition canLog;
+    private Condition canLog = null;
 
-    public EventCenter() {
+    public EventDriver() {
         initializeFSM();
         initializeObservers();
     }
@@ -50,11 +48,9 @@ public class EventCenter {
     private void initializeObservers() {
         // 收到消息时, 启动状态机, 按照观察者模式扭转
         observers.put(STATE.INIT,
-                new Subject().registerObserver(new Observer() {
-                    public void update() {
-                        fsmTable.fire(EVENT.RECVED);
-                        observers.get(STATE.AFTER_RESOLVE).notifyObservers();
-                    }
+                new Subject().registerObserver(() -> {
+                    fsmTable.fire(EVENT.RECVED);
+                    observers.get(STATE.AFTER_RESOLVE).notifyObservers();
                 }));
         observers.put(STATE.AFTER_RESOLVE, new Subject().registerObserver(autoRun));
         observers.put(STATE.AFTER_STORE, new Subject().registerObserver(autoRun));
@@ -75,52 +71,20 @@ public class EventCenter {
     MessageProcessor messageProcessor = new MessageProcessor(); // new违反DIP原则, 换成Spring注入
     LogWriter logWriter = new LogWriter();
 
-    Action doResolve = new Action() {
-        public void exec() {
-            messageProcessor.resolve();
-        }
-    };
+    Action doResolve = () -> messageProcessor.resolve();
 
     Condition canStore = new Conditions()
-            .add(new Condition() {
-                public boolean test() {
-                    return !Configs.degradeStoreMessage;
-                }
-            })
-            .add(new Condition() {
-                public boolean test() {
-                    return Message.isCompleted(Context.msg);
-                }
-            });
+            .add(() -> !Configs.degradeStoreMessage)
+            .add(() -> Message.isCompleted(Context.msg));
 
-    Action doStore = new Action() {
-        public void exec() {
-            messageProcessor.store();
-        }
-    };
+    Action doStore = () -> messageProcessor.store();
 
     Condition canSend = new Conditions()
-            .add(new Condition() {
-                public boolean test() {
-                    return !Configs.degradeSendMessage;
-                }
-            })
-            .add(new Condition() {
-                public boolean test() {
-                    return Message.isCompleted(Context.msg);
-                }
-            });
+            .add(() -> !Configs.degradeSendMessage)
+            .add(() -> Message.isCompleted(Context.msg));
 
-    Action doSend = new Action() {
-        public void exec() {
-            messageProcessor.send();
-        }
-    };
+    Action doSend = () -> messageProcessor.send();
 
-    Action doLog = new Action() {
-        public void exec() {
-            logWriter.write();
-        }
-    };
+    Action doLog = () -> logWriter.write();
 
 }

@@ -1,3 +1,6 @@
+import fsm.EVENT;
+import fsm.FSMTable;
+import fsm.STATE;
 import org.junit.Test;
 
 /**
@@ -9,27 +12,20 @@ public class TestFMSTable {
     public void test () {
 
         // 初始化状态迁移表
+        FSMTable fsmTable = new FSMTable(STATE.INIT);
+        fsmTable.from(STATE.INIT).occur(EVENT.RECVED).when(null).action(()->System.out.println("resolving")).to(STATE.END);
 
-        // 每次有时间触发时, 调用状态迁移表.
-        // 一系列的事件的触发, 会连续调用这个状态迁移表.
-        EventCenter eventCenter = new EventCenter();
-        // 事件中心根据这一系列的事件的触发过程, 初始化状态迁移表.
-        // 根据复杂的业务逻辑, 状态的迁移也是复杂的.
-        // 例如, 当某个降级开关打开时, 状态也许在某时直接迁移到LOG或END. 这取决于调用addTransaction添加了何种迁移规则
-        // addTransaction(, event.resolved, new fsm.Action(){}, end);
-
-//        fsmTable.event(EVENT.RECVED);
+        System.out.println("state = " + STATE.INIT);
+        fsmTable.fire(EVENT.RECVED);
 //        // resolve()
-//        fsmTable.event(EVENT.NOTIFY_RESOLVED);
+//        fsmTable.fire(EVENT.NOTIFY_RESOLVED);
 //        // store()
-//        fsmTable.event(EVENT.NOTIFY_STORED);
+//        fsmTable.fire(EVENT.NOTIFY_STORED);
 //        // send()
-//        fsmTable.event(EVENT.NOTIFY_SENDED);
+//        fsmTable.fire(EVENT.NOTIFY_SENDED);
 //        // log
-//        fsmTable.event(EVENT.NOTIFY_LOGED);
-//        // end
-
-        eventCenter.start();
+//        fsmTable.fire(EVENT.NOTIFY_LOGED);
+        // end
 
     }
 }
